@@ -49,8 +49,8 @@ class NewProcessor : public rclcpp::Node
         double epsilon = 0.05;
         //initializing error variables 
         double e1,e1_dot,e2,e2_dot,e3,e3_dot;
-        //the sampling time is 10 milliseconds 
-        double sampling_time = 0.01;
+        //the sampling time is 50 milliseconds 
+        double sampling_time = 0.05;
         //Setting the proportional and derivative gains 
         double Kp1 = 10;
         double Kd1 = 0.1;
@@ -65,12 +65,15 @@ class NewProcessor : public rclcpp::Node
         std::chrono::duration<double> moment = 0.1s;
         auto end = std::chrono::high_resolution_clock::now();
         while((std::abs(theta1_des-theta1)>epsilon)||(std::abs(theta2_des-theta2)>epsilon)||(std::abs(theta3_des-theta3)>epsilon)){
-            if(moment.count()<0.1){
+            theta1 = msg.data[3];
+            theta2 = msg.data[4];
+            theta3 = msg.data[5];
+            if(moment.count()<0.07){
               end = std::chrono::high_resolution_clock::now();
               moment = end - start;
               RCLCPP_INFO(this->get_logger(), "joint1es= '%f',joint2es='%f',joint3es='%f'",joint1_effort,joint2_effort,joint3_effort);
-              //RCLCPP_INFO(this->get_logger(), "moment.count()= '%f'",moment.count());
-              publisher_1->publish(message);
+              RCLCPP_INFO(this->get_logger(), "moment.count()= '%f'",moment.count());
+              // publisher_1->publish(message);
               continue;
             }
             else{
