@@ -46,18 +46,18 @@ class NewProcessor : public rclcpp::Node
         double joint2_effort = 0;
         double joint3_effort = 0;
         //steady state error is set to be 0.05 
-        double epsilon = 0.05;
+        double epsilon = 0.2;
         //initializing error variables 
         double e1,e1_dot,e2,e2_dot,e3,e3_dot;
         //the sampling time is 50 milliseconds 
         double sampling_time = 0.05;
         //Setting the proportional and derivative gains 
-        double Kp1 = 10;
-        double Kd1 = 0.1;
-        double Kp2 = 10;
-        double Kd2 = 0.1;
-        double Kp3 = 10;
-        double Kd3 = 0.1;
+        double Kp1 = 1;
+        double Kd1 = 16;
+        double Kp2 = 1;
+        double Kd2 = 16;
+        double Kp3 = 1;
+        double Kd3 = 16;
         //creating message for publisher_ to publish efforts 
         std_msgs::msg::Float64MultiArray message;
         //Calculating joint efforts using PD control parameters set above and running the loop till all have reached the necessary steady state error 
@@ -68,6 +68,7 @@ class NewProcessor : public rclcpp::Node
             theta1 = msg.data[3];
             theta2 = msg.data[4];
             theta3 = msg.data[5];
+            RCLCPP_INFO(this->get_logger(), "theta1= '%f',theta2='%f',theta3='%f'",theta1,theta2,theta3);
             if(moment.count()<0.07){
               end = std::chrono::high_resolution_clock::now();
               moment = end - start;
@@ -87,19 +88,19 @@ class NewProcessor : public rclcpp::Node
               if((std::abs(theta2_des-theta2)>epsilon)){
                   e2 = theta2_des - theta2;
                   e2_dot = (e2-e2_old)/sampling_time;
-                  joint2_effort = Kp1*e2 + Kd1*e2_dot; //effort for joint2
+                  joint2_effort = Kp2*e2 + Kd2*e2_dot; //effort for joint2
                   e2_old = e2;
               }
               if((std::abs(theta3_des-theta3)>epsilon)){
                   e3 = theta3_des - theta3;
                   e3_dot = (e3-e3_old)/sampling_time;
-                  joint3_effort = Kp1*e3 + Kd1*e3_dot; //effort for joint3
+                  joint3_effort = Kp3*e3 + Kd3*e3_dot; //effort for joint3
                   e3_old = e3;
               }   
               message.data.push_back(joint1_effort);
               message.data.push_back(joint2_effort);
               message.data.push_back(joint3_effort);
-              RCLCPP_INFO(this->get_logger(), "joint1e= '%f',joint2e='%f',joint3e='%f'",joint1_effort,joint2_effort,joint3_effort);
+              //RCLCPP_INFO(this->get_logger(), "joint1e= '%f',joint2e='%f',joint3e='%f'",joint1_effort,joint2_effort,joint3_effort);
               publisher_1->publish(message);
               auto end = std::chrono::high_resolution_clock::now();
               moment = end - start;

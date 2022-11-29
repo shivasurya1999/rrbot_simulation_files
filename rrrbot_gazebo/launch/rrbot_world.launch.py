@@ -32,17 +32,17 @@ def load_yaml(package_name, file_path):
 
 def generate_launch_description():
 
-    rrbot_gazebo = os.path.join(
-        get_package_share_directory('rrbot_gazebo'),
+    rrrbot_gazebo = os.path.join(
+        get_package_share_directory('rrrbot_gazebo'),
         'worlds',
         'rrbot.world')
 
-    print(rrbot_gazebo)
+    print(rrrbot_gazebo)
 
     gazebo = IncludeLaunchDescription(
                 PythonLaunchDescriptionSource([os.path.join(
                     get_package_share_directory('gazebo_ros'), 'launch'), '/gazebo.launch.py']),
-                launch_arguments={'world': rrbot_gazebo}.items(),
+                launch_arguments={'world': rrrbot_gazebo}.items(),
              )
 
     rrbot_description_path = os.path.join(
@@ -57,7 +57,7 @@ def generate_launch_description():
     robot_description_config = doc.toxml()
     robot_description = {'robot_description': robot_description_config}
 
-    robot_controllers = os.path.join(get_package_share_directory("rrbot_gazebo"),"config","gazebo_controllers.yaml")
+    robot_controllers = os.path.join(get_package_share_directory("rrrbot_gazebo"),"config","gazebo_controllers.yaml")
 
     node_robot_state_publisher = Node(
         package='robot_state_publisher',

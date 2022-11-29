@@ -28,9 +28,9 @@ https://github.com/ros-simulation/gazebo_ros_demos/blob/kinetic-devel/rrbot_desc
     <origin xyz="0 0 0" rpy="0 0 0" />
   </xacro:rrbot>
 
-  <xacro:rrbot_gazebo prefix="$(arg prefix)" />
+  <xacro:rrrbot_gazebo prefix="$(arg prefix)" />
   
-  <xacro:rrbot_ros2_control
+  <xacro:rrrbot_ros2_control
     name="RRBot" prefix="$(arg prefix)" />
 
 </robot>

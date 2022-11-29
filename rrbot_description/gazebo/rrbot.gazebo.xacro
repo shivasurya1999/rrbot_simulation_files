@@ -5,12 +5,12 @@ https://github.com/ros-simulation/gazebo_ros_demos/blob/kinetic-devel/rrbot_desc
 -->
 <robot xmlns:xacro="http://ros.org/wiki/xacro">
 
-  <xacro:macro name="rrbot_gazebo" params="prefix">
+  <xacro:macro name="rrrbot_gazebo" params="prefix">
 
     <!-- ros_control plugin -->
     <gazebo>
       <plugin name="gazebo_ros2_control" filename="libgazebo_ros2_control.so">
-        <parameters>$(find rrbot_gazebo)/config/gazebo_controllers.yaml</parameters>
+        <parameters>$(find rrrbot_gazebo)/config/gazebo_controllers.yaml</parameters>
       </plugin>
     </gazebo>
 

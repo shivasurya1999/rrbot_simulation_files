@@ -17,8 +17,8 @@ int main(int argc, char **argv)
   rclcpp::Client<controller_manager_msgs::srv::SwitchController>::SharedPtr client =  node->create_client<controller_manager_msgs::srv::SwitchController>("/controller_manager/switch_controller");
 
   auto request = std::make_shared<controller_manager_msgs::srv::SwitchController::Request>();
-  request->activate_controllers = {"forward_effort_controller"};
-  //request->activate_controllers = {"forward_velocity_controller"};
+  //request->activate_controllers = {"forward_effort_controller"};
+  request->activate_controllers = {"forward_velocity_controller"};
   request->deactivate_controllers = {"forward_position_controller"};
   while (!client->wait_for_service(1s)) {
     if (!rclcpp::ok()) {
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"), "Failed to call service");    
   }
-
+  // RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "effort: %d", result.get()->BEST_EFFORT);
   rclcpp::shutdown();
   return 0;
 }
