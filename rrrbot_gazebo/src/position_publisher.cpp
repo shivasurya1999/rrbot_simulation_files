@@ -29,7 +29,7 @@ class MinimalPublisher : public rclcpp::Node
       auto message = std_msgs::msg::Float64MultiArray();
       message.data.push_back(1);
       message.data.push_back(0.5);
-      message.data.push_back(0.2);
+      message.data.push_back(-0.2);
       RCLCPP_INFO(this->get_logger(), "Publishing...");
       publisher_->publish(message);
     }

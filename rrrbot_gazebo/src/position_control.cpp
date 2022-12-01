@@ -38,7 +38,7 @@ class Processor : public rclcpp::Node
 
         double theta1_des = -0.3; 
         double theta2_des = 1.83; 
-        double theta3_des = 0.8;
+        double theta3_des = -0.2;
 
         RCLCPP_INFO(this->get_logger(), "theta1_des= '%f',theta2_des='%f',theta3_des='%f'",theta1_des,theta2_des,theta3_des);
         RCLCPP_INFO(this->get_logger(), "theta1= '%f',theta2='%f',theta3='%f'",theta1,theta2,theta3);
