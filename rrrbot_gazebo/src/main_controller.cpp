@@ -4,6 +4,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp" 
 #include "std_msgs/msg/float64_multi_array.hpp"
+#include "tutorial_interfaces/srv/position_control.hpp"
 #include <iostream>
 #include <time.h>
 #include <cstdlib>
@@ -24,27 +25,38 @@ class NewProcessor : public rclcpp::Node
     NewProcessor()
     : Node("main_control")
     {
-      subscription_1 = this->create_subscription<std_msgs::msg::Float64MultiArray>("theta_des_and_actual", 10,std::bind(&NewProcessor::topic1_callback, this, _1));
-      publisher_1 = this->create_publisher<std_msgs::msg::Float64MultiArray>("/forward_effort_controller/commands", 10);
+      service_ = this->create_service<tutorial_interfaces::srv::PositionControl>("position_control", std::bind(&NewProcessor::jointref, this, _1));
+      // subscription_1 = this->create_subscription<std_msgs::msg::Float64MultiArray>("theta_des_and_actual", 10,std::bind(&NewProcessor::topic1_callback, this, _1));
+      // publisher_1 = this->create_publisher<std_msgs::msg::Float64MultiArray>("/forward_effort_controller/commands", 10);
     }
 
   private:
     //setting the old error to be the difference in desired and actual angles 
-    // std::optional<double> e1_old = {0};
-    // std::optional<double> e2_old = {0};
-    // std::optional<double> e3_old = {0};
     mutable double e1_old;
     mutable double e2_old;
     mutable double e3_old;
+    mutable double theta1_des;
+    mutable double theta2_des;
+    mutable double theta3_des;
+
+    void jointref(const std::shared_ptr<tutorial_interfaces::srv::PositionControl::Request> request){
+      theta1_des = request->joint1_ref;
+      theta2_des = request->joint2_ref;
+      theta3_des = request->joint3_ref;
+      subscription_1 = this->create_subscription<std_msgs::msg::Float64MultiArray>("theta_actual", 10,std::bind(&NewProcessor::topic1_callback, this, _1));
+      publisher_1 = this->create_publisher<std_msgs::msg::Float64MultiArray>("/forward_effort_controller/commands", 10);
+
+
+    }
 
     void topic1_callback(const std_msgs::msg::Float64MultiArray & msg) const
     {
-        std::double_t theta1_des = msg.data[0];
-        std::double_t theta2_des = msg.data[1];
-        std::double_t theta3_des = msg.data[2];
-        std::double_t theta1 = msg.data[3];
-        std::double_t theta2 = msg.data[4];
-        std::double_t theta3 = msg.data[5];
+        // std::double_t theta1_des = msg.data[0];
+        // std::double_t theta2_des = msg.data[1];
+        // std::double_t theta3_des = msg.data[2];
+        std::double_t theta1 = msg.data[0];
+        std::double_t theta2 = msg.data[1];
+        std::double_t theta3 = msg.data[2];
         RCLCPP_INFO(this->get_logger(), "theta1_des= '%f',theta2_des='%f',theta3_des='%f'",theta1_des,theta2_des,theta3_des);
         RCLCPP_INFO(this->get_logger(), "theta1= '%f',theta2='%f',theta3='%f'",theta1,theta2,theta3);
       
@@ -59,12 +71,12 @@ class NewProcessor : public rclcpp::Node
         //the sampling time is 100 milliseconds 
         double sampling_time = 0.1;
         //Setting the proportional and derivative gains 
-        double Kp1 = 0.04;
-        double Kd1 = 0.03;
-        double Kp2 = 0.04;
-        double Kd2 = 0.03;
-        double Kp3 = 125;
-        double Kd3 = 60;
+        double Kp1 = 0.02;
+        double Kd1 = 0.06;
+        double Kp2 = 0.02;
+        double Kd2 = 0.06;
+        double Kp3 = 135;
+        double Kd3 = 27;
 
         //creating message for publisher_ to publish efforts 
         //auto message = std_msgs::msg::Float64MultiArray();
@@ -114,17 +126,18 @@ class NewProcessor : public rclcpp::Node
     }
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr publisher_1;
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_1;
+    rclcpp::Service<tutorial_interfaces::srv::PositionControl>::SharedPtr service_;
 };
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  rclcpp::Rate loop_rate(10); //10 Hz frequency 
-  //rclcpp::spin(std::make_shared<NewProcessor>());
-  while(rclcpp::ok){
-    rclcpp::spin_some(std::make_shared<NewProcessor>());
-    loop_rate.sleep();
-  }
+  //rclcpp::Rate loop_rate(10); //10 Hz frequency 
+  rclcpp::spin(std::make_shared<NewProcessor>());
+  // while(rclcpp::ok){
+  //   rclcpp::spin_some(std::make_shared<NewProcessor>());
+  //   loop_rate.sleep();
+  // }
   rclcpp::shutdown();
   return 0;
 }

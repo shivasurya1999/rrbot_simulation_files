@@ -25,7 +25,7 @@ add_executable(theta_new_ref_client src/position_control.cpp)
 ament_target_dependencies(theta_new_ref_client rclcpp std_msgs sensor_msgs tutorial_interfaces)
 
 add_executable(main_control src/main_controller.cpp)
-ament_target_dependencies(main_control rclcpp std_msgs sensor_msgs)
+ament_target_dependencies(main_control rclcpp std_msgs sensor_msgs tutorial_interfaces)
 
 
 install(TARGETS

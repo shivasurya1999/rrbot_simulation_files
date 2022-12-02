@@ -17,7 +17,7 @@ class Processor : public rclcpp::Node
   Processor(): Node("pos_control")
   {
     subscription_ = this->create_subscription<sensor_msgs::msg::JointState>("/joint_states", 10, std::bind(&Processor::topic_callback, this, _1));
-    publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("theta_des_and_actual", 10);
+    publisher_ = this->create_publisher<std_msgs::msg::Float64MultiArray>("theta_actual", 10);
   }
 
 
@@ -36,17 +36,17 @@ class Processor : public rclcpp::Node
         // double theta2_des = result.get()->theta2_des; 
         // double theta3_des = result.get()->theta3_des;
 
-        double theta1_des = -0.3; 
-        double theta2_des = 1.83; 
-        double theta3_des = -0.2;
+        // double theta1_des = -0.8; 
+        // double theta2_des = 2.05; 
+        // double theta3_des = -0.3;
 
-        RCLCPP_INFO(this->get_logger(), "theta1_des= '%f',theta2_des='%f',theta3_des='%f'",theta1_des,theta2_des,theta3_des);
+        // RCLCPP_INFO(this->get_logger(), "theta1_des= '%f',theta2_des='%f',theta3_des='%f'",theta1_des,theta2_des,theta3_des);
         RCLCPP_INFO(this->get_logger(), "theta1= '%f',theta2='%f',theta3='%f'",theta1,theta2,theta3);
 
         std_msgs::msg::Float64MultiArray message;
-        message.data.push_back(theta1_des); 
-        message.data.push_back(theta2_des);
-        message.data.push_back(theta3_des);
+        // message.data.push_back(theta1_des); 
+        // message.data.push_back(theta2_des);
+        // message.data.push_back(theta3_des);
         message.data.push_back(theta1);
         message.data.push_back(theta2);
         message.data.push_back(theta3);
