@@ -1,8 +1,8 @@
 # rrbot_simulation_files
  RBE500 final part2
 Group Assignment – Part 2
-Shiva Surya Lolla
-Chaitanya Sriram Gaddipati 
+Shiva Surya Lolla,
+Chaitanya Sriram Gaddipati, 
 Ethan Wilke 
 
 The “Position control” file consists of a subscriber file that reads and organizes the recorded current positions of the joints and then sends them out in a message format through a publisher. Below is its code. (Please check code comments below for documentation)
