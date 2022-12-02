@@ -25,13 +25,12 @@ class NewProcessor : public rclcpp::Node
     NewProcessor()
     : Node("main_control")
     {
-      service_ = this->create_service<tutorial_interfaces::srv::PositionControl>("position_control", std::bind(&NewProcessor::jointref, this, _1));
-      // subscription_1 = this->create_subscription<std_msgs::msg::Float64MultiArray>("theta_des_and_actual", 10,std::bind(&NewProcessor::topic1_callback, this, _1));
-      // publisher_1 = this->create_publisher<std_msgs::msg::Float64MultiArray>("/forward_effort_controller/commands", 10);
+      //create a service to take desired joint values 
+      service_ = this->create_service<tutorial_interfaces::srv::PositionControl>("position_control", std::bind(&NewProcessor::jointref, this, _1)); 
     }
 
   private:
-    //setting the old error to be the difference in desired and actual angles 
+    //initializing the old error and desired joint values for modification inside the callback function 
     mutable double e1_old;
     mutable double e2_old;
     mutable double e3_old;
@@ -40,21 +39,19 @@ class NewProcessor : public rclcpp::Node
     mutable double theta3_des;
 
     void jointref(const std::shared_ptr<tutorial_interfaces::srv::PositionControl::Request> request){
+      //taking desired angle values from the client request from the terminal 
       theta1_des = request->joint1_ref;
       theta2_des = request->joint2_ref;
       theta3_des = request->joint3_ref;
-      subscription_1 = this->create_subscription<std_msgs::msg::Float64MultiArray>("theta_actual", 10,std::bind(&NewProcessor::topic1_callback, this, _1));
-      publisher_1 = this->create_publisher<std_msgs::msg::Float64MultiArray>("/forward_effort_controller/commands", 10);
-      publisher_2 = this->create_publisher<std_msgs::msg::Float64MultiArray>("/theta_des", 10);
-
-
+      //subscribing to actual joint angles
+      subscription_1 = this->create_subscription<std_msgs::msg::Float64MultiArray>("theta_actual", 10,std::bind(&NewProcessor::topic1_callback, this, _1)); 
+      publisher_1 = this->create_publisher<std_msgs::msg::Float64MultiArray>("/forward_effort_controller/commands", 10); //publishing joint efforts 
+      publisher_2 = this->create_publisher<std_msgs::msg::Float64MultiArray>("/theta_des", 10); //publishing desired joint values for plotting 
     }
 
     void topic1_callback(const std_msgs::msg::Float64MultiArray & msg) const
     {
-        // std::double_t theta1_des = msg.data[0];
-        // std::double_t theta2_des = msg.data[1];
-        // std::double_t theta3_des = msg.data[2];
+        //extracting the actual joint values 
         std::double_t theta1 = msg.data[0];
         std::double_t theta2 = msg.data[1];
         std::double_t theta3 = msg.data[2];
@@ -65,37 +62,42 @@ class NewProcessor : public rclcpp::Node
         double joint1_effort = 0;
         double joint2_effort = 0;
         double joint3_effort = 0;
-        //steady state error is set to be 0.05 
+        //steady state error is set to be 0.01 
         double epsilon = 0.01;
         //initializing error variables 
         double e1,e2,e3,e1_dot,e2_dot,e3_dot;
         //the sampling time is 100 milliseconds 
         double sampling_time = 0.1;
         //Setting the proportional and derivative gains 
-        double Kp1 = 0.09; 
-        double Kd1 = 0.09;
-        double Kp2 = 0.05; 
-        double Kd2 = 0.06;
-        double Kp3 = 1200;
-        double Kd3 = 9;
+        //Below are the tuned values 
+        double Kp1 = 0.09; //joint 1 proportional gain 
+        double Kd1 = 0.09; //joint 1 derivative gain 
+        double Kp2 = 0.05; //joint 2 proportional gain 
+        double Kd2 = 0.06; //joint 2 derivative gain
+        double Kp3 = 1200; //joint 3 proportional gain 
+        double Kd3 = 9; //joint 3 derivative gain
 
         //creating message for publisher_ to publish efforts 
-        //auto message = std_msgs::msg::Float64MultiArray();
         std_msgs::msg::Float64MultiArray message;
         std_msgs::msg::Float64MultiArray message1;
-        //Calculating joint efforts using PD control parameters set above and running the loop till all have reached the necessary steady state error 
+
+        //Calculating joint efforts using PD control parameters set above and calculating joint efforts till all joint values have reached the necessary steady state 
+
+        //joint 1
         if((std::abs(theta1_des-theta1)>epsilon)){
-            e1 = theta1_des - theta1;
-            if(std::abs(theta1)<0.03){
-              joint1_effort = Kp1*e1;
-              e1_old = e1;
+            e1 = theta1_des - theta1; //calculating error 
+            if(std::abs(theta1)<0.03){ //During the very initial state, as there is no old error, using proportional controller only 
+              joint1_effort = Kp1*e1; //effort for joint1
+              e1_old = e1; //updating old error 
             }
             else{
-              e1_dot = (e1-e1_old)/sampling_time;
-              joint1_effort = Kp1*e1 + Kd1*e1_dot; //effort for joint1
-              e1_old = e1;
+              e1_dot = (e1-e1_old)/sampling_time; //calculating the rate of change of error 
+              joint1_effort = Kp1*e1 + Kd1*e1_dot; //effort for joint1 generated using PD controller 
+              e1_old = e1; //updating old error 
             }
         }
+        
+        //joint 2
         if((std::abs(theta2_des-theta2)>epsilon)){
             e2 = theta2_des - theta2;
             if(std::abs(theta2)<0.15){
@@ -108,6 +110,8 @@ class NewProcessor : public rclcpp::Node
               e2_old = e2;
             }
         }
+
+        //joint 3
         if((std::abs(theta3_des-theta3)>epsilon)){
             e3 = theta3_des - theta3;
             if(std::abs(theta3)<0.01){
@@ -120,14 +124,19 @@ class NewProcessor : public rclcpp::Node
               e3_old = e3;
             }
         }   
+
+        //storing the joint efforts in a message 
         message.data.push_back(joint1_effort);
         message.data.push_back(joint2_effort);
         message.data.push_back(joint3_effort);
+        //storing desired joint values in another message 
         message1.data.push_back(theta1_des);
         message1.data.push_back(theta2_des);
         message1.data.push_back(theta3_des);
         RCLCPP_INFO(this->get_logger(), "joint1e= '%f',joint2e='%f',joint3e='%f'",joint1_effort,joint2_effort,joint3_effort);
+        //publishing joint efforts 
         publisher_1->publish(message);
+        //publishing desired angles taken from the service 
         publisher_2->publish(message1);
     }
     rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr publisher_1;
@@ -139,12 +148,7 @@ class NewProcessor : public rclcpp::Node
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  //rclcpp::Rate loop_rate(10); //10 Hz frequency 
   rclcpp::spin(std::make_shared<NewProcessor>());
-  // while(rclcpp::ok){
-  //   rclcpp::spin_some(std::make_shared<NewProcessor>());
-  //   loop_rate.sleep();
-  // }
   rclcpp::shutdown();
   return 0;
 }
