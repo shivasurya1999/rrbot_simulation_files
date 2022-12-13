@@ -1,7 +1,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
-#include "tutorial_interfaces/srv/position_control.hpp"
+#include "tutorial_interfaces/srv/joint_to_end.hpp"
 #include <chrono>
 #include <cstdlib>
 #include <functional>
@@ -18,12 +18,12 @@ using std::placeholders::_1;
 using namespace std::chrono_literals;
 using namespace std::chrono;
 
-class NewProcessor : public rclcpp::Node {
+class NewVelProcessor : public rclcpp::Node {
 public:
-  NewProcessor() : Node("main_control") {
+  NewVelProcessor() : Node("velocity_control") {
     // create a service to take desired joint values
-    service_ = this->create_service<tutorial_interfaces::srv::PositionControl>(
-        "position_control", std::bind(&NewProcessor::jointref, this, _1));
+    service_ = this->create_service<tutorial_interfaces::srv::JointToEnd>(
+        "joint_to_end", std::bind(&NewVelProcessor::jointvelref, this, _1));
   }
 
 private:
@@ -32,38 +32,34 @@ private:
   mutable double e1_old;
   mutable double e2_old;
   mutable double e3_old;
-  mutable double theta1_des;
-  mutable double theta2_des;
-  mutable double theta3_des;
+  mutable double jv1_des;
+  mutable double jv2_des;
+  mutable double jv3_des;
 
-  void jointref(
-      const std::shared_ptr<tutorial_interfaces::srv::PositionControl::Request>
-          request) {
+  void jointvelref(
+      const std::shared_ptr<tutorial_interfaces::srv::JointToEnd::Request> request) {
     // taking desired angle values from the client request from the terminal
-    theta1_des = request->joint1_ref;
-    theta2_des = request->joint2_ref;
-    theta3_des = request->joint3_ref;
+    jv1_des = request->j1vel_ref;
+    jv2_des = request->j2vel_ref;
+    jv3_des = request->j3vel_ref;
     // subscribing to actual joint angles
-    subscription_1 =
-        this->create_subscription<std_msgs::msg::Float64MultiArray>(
-            "theta_actual", 10,
-            std::bind(&NewProcessor::topic1_callback, this, _1));
-    publisher_1 = this->create_publisher<std_msgs::msg::Float64MultiArray>(
+    subscription_2 = this->create_subscription<sensor_msgs::msg::JointState>("/joint_states", 10, std::bind(&NewVelProcessor::topic2_callback, this, _1)); 
+    publisher_3 = this->create_publisher<std_msgs::msg::Float64MultiArray>(
         "/forward_effort_controller/commands", 10); // publishing joint efforts
-    publisher_2 = this->create_publisher<std_msgs::msg::Float64MultiArray>(
-        "/theta_des", 10); // publishing desired joint values for plotting
+    publisher_4 = this->create_publisher<std_msgs::msg::Float64MultiArray>(
+        "/joint_vel_des", 10); // publishing desired joint values for plotting
   }
 
-  void topic1_callback(const std_msgs::msg::Float64MultiArray &msg) const {
+  void topic2_callback(const sensor_msgs::msg::JointState &msg) const {
     // extracting the actual joint values
-    std::double_t theta1 = msg.data[0];
-    std::double_t theta2 = msg.data[1];
-    std::double_t theta3 = msg.data[2];
+    std::double_t jv1 = msg.velocity[0];
+    std::double_t jv2 = msg.velocity[1];
+    std::double_t jv3 = msg.velocity[2];
     RCLCPP_INFO(this->get_logger(),
-                "\ntheta1_des= '%f',theta2_des='%f',theta3_des='%f'\n",
-                theta1_des, theta2_des, theta3_des);
-    RCLCPP_INFO(this->get_logger(), "\ntheta1= '%f',theta2='%f',theta3='%f'\n",
-                theta1, theta2, theta3);
+                "\njv1_des= '%f',jv2_des='%f',jv3_des='%f'\n",
+                jv1_des, jv2_des, jv3_des);
+    RCLCPP_INFO(this->get_logger(), "\njv1= '%f',jv2='%f',jv3='%f'\n",
+                jv1, jv2, jv3);
 
     // initial joint efforts are set to be zero
     double joint1_effort = 0;
@@ -78,7 +74,7 @@ private:
     // Setting the proportional and derivative gains
     // Below are the tuned values
     double Kp1 = 0.09; // joint 1 proportional gain
-    double Kd1 = 0.09; // joint 1 derivative gain
+    double Kd1 = 0.08; // joint 1 derivative gain
     double Kp2 = 0.05; // joint 2 proportional gain
     double Kd2 = 0.06; // joint 2 derivative gain
     double Kp3 = 1200; // joint 3 proportional gain
@@ -94,9 +90,9 @@ private:
     // necessary steady state
 
     // joint 1
-    if ((std::abs(theta1_des - theta1) > epsilon)) {
-      e1 = theta1_des - theta1; // calculating error
-      if (std::abs(theta1) <
+    if ((std::abs(jv1_des - jv1) > epsilon)) {
+      e1 = jv1_des - jv1; // calculating error
+      if (std::abs(jv1) <
           0.03) { // During the very initial state, as there is no old error,
                   // using proportional controller only
         joint1_effort = Kp1 * e1; // effort for joint1
@@ -112,9 +108,9 @@ private:
     }
 
     // joint 2
-    if ((std::abs(theta2_des - theta2) > epsilon)) {
-      e2 = theta2_des - theta2;
-      if (std::abs(theta2) < 0.15) {
+    if ((std::abs(jv2_des - jv2) > epsilon)) {
+      e2 = jv2_des - jv2;
+      if (std::abs(jv2) < 0.15) {
         joint2_effort = Kp2 * e2;
         e2_old = e2;
       } else {
@@ -125,9 +121,9 @@ private:
     }
 
     // joint 3
-    if ((std::abs(theta3_des - theta3) > epsilon)) {
-      e3 = theta3_des - theta3;
-      if (std::abs(theta3) < 0.01) {
+    if ((std::abs(jv3_des - jv3) > epsilon)) {
+      e3 = jv3_des - jv3;
+      if (std::abs(jv3) < 0.01) {
         joint3_effort = Kp3 * e3;
         e3_old = e3;
       } else {
@@ -142,29 +138,29 @@ private:
     message.data.push_back(joint2_effort);
     message.data.push_back(joint3_effort);
     // storing desired joint values in another message
-    message1.data.push_back(theta1_des);
-    message1.data.push_back(theta2_des);
-    message1.data.push_back(theta3_des);
+    message1.data.push_back(jv1_des);
+    message1.data.push_back(jv2_des);
+    message1.data.push_back(jv3_des);
     RCLCPP_INFO(
         this->get_logger(),
         "\njoint1 effort = '%f',joint2 effort ='%f',joint3 effort ='%f'\n",
         joint1_effort, joint2_effort, joint3_effort);
     // publishing joint efforts
-    publisher_1->publish(message);
+    publisher_3->publish(message);
     // publishing desired angles taken from the service
-    publisher_2->publish(message1);
+    publisher_4->publish(message1);
   }
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr publisher_1;
-  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr publisher_2;
-  rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr
-      subscription_1;
-  rclcpp::Service<tutorial_interfaces::srv::PositionControl>::SharedPtr
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr publisher_3;
+  rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr publisher_4;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
+      subscription_2;
+  rclcpp::Service<tutorial_interfaces::srv::JointToEnd>::SharedPtr
       service_;
 };
 
 int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<NewProcessor>());
+  rclcpp::spin(std::make_shared<NewVelProcessor>());
   rclcpp::shutdown();
   return 0;
 }
