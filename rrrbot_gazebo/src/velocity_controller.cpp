@@ -73,10 +73,10 @@ private:
     double sampling_time = 0.1;
     // Setting the proportional and derivative gains
     // Below are the tuned values
-    double Kp1 = 5; // joint 1 proportional gain
+    double Kp1 = 3; // joint 1 proportional gain
     double Kd1 = 1; // joint 1 derivative gain
-    double Kp2 = 2; // joint 2 proportional gain
-    double Kd2 = 0.5; // joint 2 derivative gain
+    double Kp2 = 3; // joint 2 proportional gain
+    double Kd2 = 1; // joint 2 derivative gain
     double Kp3 = 100; // joint 3 proportional gain
     double Kd3 = 90;    // joint 3 derivative gain
 

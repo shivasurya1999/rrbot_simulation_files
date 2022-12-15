@@ -28,7 +28,9 @@ class VelocityKinematics : public rclcpp::Node
 public:
   VelocityKinematics() : Node("vel_kinematics")
   {
+    //Service for obtaining joint velocities from end effector velocity
     service_1 = this->create_service<tutorial_interfaces::srv::EndToJoint>("end_to_joint", std::bind(&VelocityKinematics::velref, this, _1));
+    //Service for obtaining end effector velocity from joint velocities
     service_2 = this->create_service<tutorial_interfaces::srv::JointToEnd>("joint_to_end", std::bind(&VelocityKinematics::jref, this, _1));
   }
 
@@ -46,6 +48,7 @@ private:
   void velref(const std::shared_ptr<tutorial_interfaces::srv::EndToJoint::Request>
                   request)
   {
+    //Taking end effector velocity from request 
     evx_ref = request->vx_ref;
     evy_ref = request->vy_ref;
     evz_ref = request->vz_ref;
@@ -53,14 +56,17 @@ private:
     ewy_ref = request->omy_ref;
     ewz_ref = request->omz_ref;
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming request\nvx_ref: %f" " vy_ref: %f" " vz_ref: %f", request->vx_ref, request->vy_ref, request->vz_ref);
+    //Subscribing to current joint states for getting joint angle values for computing Jacobian matrix 
     subscriber_1 = this->create_subscription<sensor_msgs::msg::JointState>("/joint_states", 10, std::bind(&VelocityKinematics::topic_callback1, this, _1)); 
     //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "response in service:\n [%f, %f, %f]", j1v_ref, j2v_ref, j3v_ref);
   }
 
   void topic_callback1(const sensor_msgs::msg::JointState &msg) const {
+    //Extracting current position information 
     std::double_t q1 = msg.position[0];
     std::double_t q2 = msg.position[1];
     std::double_t q3 = msg.position[2];
+    //Computing pseudo inverse of Jacobian matrix 
     double sig1 = sin(q1)*sin(q2);
     double sig2 = cos(q2)*sin(q1);
     double sig3 = cos(q1)*sin(q2);
@@ -101,10 +107,12 @@ private:
     vmat(4,0) = ewy_ref;
     vmat(5,0) = ewz_ref;
 
+    //Computing joint velocities from pseudo inverse of Jacobian matrix and end effector velocity 
     Eigen::MatrixXd jmat = pinvJ*vmat;
     j1v_ref = jmat(0,0);
     j2v_ref = jmat(1,0);
     j3v_ref = jmat(2,0);
+    //Sending the obtained joint velocities as response 
     tutorial_interfaces::srv::EndToJoint::Response response;
     response.joint1vel_ref = j1v_ref;
     response.joint2vel_ref = j2v_ref;
@@ -125,17 +133,21 @@ private:
   void jref(const std::shared_ptr<tutorial_interfaces::srv::JointToEnd::Request>
                   request1)
   {
+    //Taking joint velocities from request 
     j1_refv = request1->j1vel_ref;
     j2_refv = request1->j2vel_ref;
     j3_refv = request1->j3vel_ref;
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming request\nj1vel_ref: %f" " j2vel_ref: %f" " j3vel_ref: %f", request1->j1vel_ref, request1->j2vel_ref, request1->j3vel_ref);
+    //Subscribing to current joint states for getting joint angle values for computing Jacobian matrix 
     subscriber_2 = this->create_subscription<sensor_msgs::msg::JointState>("/joint_states", 10, std::bind(&VelocityKinematics::topic_callback2, this, _1)); 
   }
 
   void topic_callback2(const sensor_msgs::msg::JointState &msg2) const {
+    //Extracting current position information
     std::double_t q1 = msg2.position[0];
     std::double_t q2 = msg2.position[1];
     std::double_t q3 = msg2.position[2];
+    //Computing Jacobian matrix 
     double sig1 = sin(q1)*sin(q2);
     double sig2 = cos(q2)*sin(q1);
     double sig3 = cos(q1)*sin(q2);
@@ -167,10 +179,12 @@ private:
     jvmat(1,0) = j2_refv;
     jvmat(2,0) = j3_refv;
 
+    //Computing end effector velocity from Jacobian matrix and joint velocities 
     Eigen::MatrixXd vemat = J*jvmat;
     v_refx = vemat(0,0);
     v_refy = vemat(1,0);
     v_refz = vemat(2,0);
+    //Sending the obtained end effector joint velocities as response 
     tutorial_interfaces::srv::JointToEnd::Response response1;
     response1.vref_x = v_refx;
     response1.vref_y = v_refy;
