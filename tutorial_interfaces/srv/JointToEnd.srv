@@ -1,0 +1,10 @@
+float64 j1vel_ref
+float64 j2vel_ref
+float64 j3vel_ref 
+---
+float64 vref_x
+float64 vref_y
+float64 vref_z
+float64 omref_x
+float64 omref_y
+float64 omref_z

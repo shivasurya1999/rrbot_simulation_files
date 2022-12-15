@@ -1,0 +1,10 @@
+float64 vx_ref
+float64 vy_ref
+float64 vz_ref
+float64 omx_ref
+float64 omy_ref
+float64 omz_ref
+---
+float64 joint1vel_ref
+float64 joint2vel_ref
+float64 joint3vel_ref 

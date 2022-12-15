@@ -42,7 +42,7 @@ private:
     jv1_des = request->j1vel_ref;
     jv2_des = request->j2vel_ref;
     jv3_des = request->j3vel_ref;
-    // subscribing to actual joint angles
+    // subscribing to actual joint velocities
     subscription_2 = this->create_subscription<sensor_msgs::msg::JointState>("/joint_states", 10, std::bind(&NewVelProcessor::topic2_callback, this, _1)); 
     publisher_3 = this->create_publisher<std_msgs::msg::Float64MultiArray>(
         "/forward_effort_controller/commands", 10); // publishing joint efforts

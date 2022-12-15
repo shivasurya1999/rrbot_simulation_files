@@ -54,6 +54,7 @@ private:
     ewz_ref = request->omz_ref;
     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "Incoming request\nvx_ref: %f" " vy_ref: %f" " vz_ref: %f", request->vx_ref, request->vy_ref, request->vz_ref);
     subscriber_1 = this->create_subscription<sensor_msgs::msg::JointState>("/joint_states", 10, std::bind(&VelocityKinematics::topic_callback1, this, _1)); 
+    //RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "response in service:\n [%f, %f, %f]", j1v_ref, j2v_ref, j3v_ref);
   }
 
   void topic_callback1(const sensor_msgs::msg::JointState &msg) const {
@@ -86,6 +87,12 @@ private:
     J(5,1) = 1;
     J(5,2) = 0;
     Eigen::MatrixXd pinvJ = J.completeOrthogonalDecomposition().pseudoInverse();
+    //Eigen::MatrixXd pinvJinv = pinvJ.completeOrthogonalDecomposition().pseudoInverse();
+    // for(int i=0;i<6;i++){
+    //   for(int j=0;j<3;j++){
+    //     RCLCPP_INFO(rclcpp::get_logger("rclcpp"), "pinvJinv matrix elem:\n %f", pinvJinv(i,j));
+    //   }
+    // }
     Eigen::MatrixXd vmat(6,1);
     vmat(0,0) = evx_ref;
     vmat(1,0) = evy_ref;
@@ -154,6 +161,7 @@ private:
     J(5,0) = 1;
     J(5,1) = 1;
     J(5,2) = 0;
+
     Eigen::MatrixXd jvmat(3,1);
     jvmat(0,0) = j1_refv;
     jvmat(1,0) = j2_refv;
